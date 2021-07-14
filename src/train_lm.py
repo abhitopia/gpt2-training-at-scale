@@ -134,23 +134,23 @@ def init_gpu_params(params):
 @click.command()
 @click.option('--input-dir', '-i', type=click.Path(file_okay=False, exists=True, dir_okay=True), required=True)
 @click.option('--output-dir', '-o', type=click.Path(dir_okay=True, file_okay=False))
-@click.option('--n-embd', '-ne', type=int, help="Size of embeddings", default=1280)
-@click.option('--n-head', '-nh', type=int, help="Number of heads per layer", default=20)
-@click.option('--n-layer', '-nl', type=int, help="Number of layers", default=36)
-@click.option('--alpha_ce', type=float, help="Coeff Cross Entropy (for distillation)", default=0.0)
-@click.option('--alpha_clm', type=float, help="Coeff Language Model Loss", default=1.0)
-@click.option('--alpha_mse', type=float, help="Coeff MSE (for distillation)", default=0.0)
+@click.option('--n-embd', '-ne', type=int, help="Size of embeddings", default=1024)
+@click.option('--n-head', '-nh', type=int, help="Number of heads per layer", default=16)
+@click.option('--n-layer', '-nl', type=int, help="Number of layers", default=24)
+@click.option('--alpha-ce', type=float, help="Coeff Cross Entropy (for distillation)", default=0.0)
+@click.option('--alpha-clm', type=float, help="Coeff Language Model Loss", default=1.0)
+@click.option('--alpha-mse', type=float, help="Coeff MSE (for distillation)", default=0.0)
 @click.option('--temperature', type=float, help="Temperature (for distillation)", default=1.0)
 @click.option('--gradient-accumulation-steps', '-gas', type=int, default=50)
-@click.option("--n_epoch", type=int, default=3, help="Number of pass on the whole dataset.")
-@click.option("--batch_size", type=int, default=5, help="Batch size (for each process).")
-@click.option("--group_by_size", is_flag=True, default=False, help="If true, group sequences that have similar length into the same batch. Default is False.")
-@click.option("--warmup_prop", default=0.05, type=float, help="Linear warmup proportion.")
-@click.option("--weight_decay", default=0.0, type=float, help="Weight deay if we apply some.")
-@click.option("--learning_rate", default=5e-4, type=float, help="The initial learning rate for Adam.")
-@click.option("--adam_epsilon", default=1e-6, type=float, help="Epsilon for Adam optimizer.")
-@click.option("--max_grad_norm", default=5.0, type=float, help="Max gradient norm.")
-@click.option("--initializer_range", default=0.02, type=float, help="Random initialization range.")
+@click.option("--n-epoch", type=int, default=3, help="Number of pass on the whole dataset.")
+@click.option("--batch-size", '-bs',  type=int, default=5, help="Batch size (for each process).")
+@click.option("--group-by-size", is_flag=True, default=False, help="If true, group sequences that have similar length into the same batch. Default is False.")
+@click.option("--warmup-prop", default=0.05, type=float, help="Linear warmup proportion.")
+@click.option("--weight-decay", default=0.0, type=float, help="Weight deay if we apply some.")
+@click.option("--learning-rate", '-lr', default=5e-4, type=float, help="The initial learning rate for Adam.")
+@click.option("--adam-epsilon", default=1e-6, type=float, help="Epsilon for Adam optimizer.")
+@click.option("--max-grad-norm", default=5.0, type=float, help="Max gradient norm.")
+@click.option("--initializer-range", default=0.02, type=float, help="Random initialization range.")
 @click.option('--teacher', type=click.Path(file_okay=True, exists=True), default=None, help='Path to teacher '
                                                                                             'checkpoint (for '
                                                                                             'distillation)')
@@ -201,7 +201,7 @@ def train(**args):
     logger.info("Data loaded!")
 
     # STUDENT #
-    student_config = GPT2Config.from_pretrained("gpt2-large")
+    student_config = GPT2Config.from_pretrained("gpt2-medium")
     student_config.n_head = args.n_head
     student_config.n_layer = args.n_layer
     student_config.n_embd = args.n_embd
