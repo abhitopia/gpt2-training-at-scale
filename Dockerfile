@@ -1,4 +1,4 @@
-ARG PTH_VERSION=1.9.0-cuda10.2-cudnn7
+ARG PTH_VERSION=1.9.0-cuda11.1-cudnn8
 
 # 1/Building apex with pytorch:*-devel
 FROM pytorch/pytorch:${PTH_VERSION}-devel AS apex-builder
@@ -31,10 +31,12 @@ WORKDIR /workspace
 
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
-
+RUN pip install torchelastic
+Copy .git .git
 COPY src src
 
-ENTRYPOINT ["python", "src/train_lm_ref.py"]
+ENV PYTHONPATH "${PYTHONPATH}:/workspace"
+ENTRYPOINT ["python", "src/train_lm.py"]
 CMD ["--help"]
 
 
