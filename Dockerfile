@@ -26,13 +26,11 @@ COPY --from=apex-builder /tmp/apex/apex-*.whl /tmp/apex/
 RUN pip install --no-cache-dir /tmp/apex/apex-*.whl && \
     rm -fr /tmp/apex
 
-FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-runtime
 WORKDIR /workspace
 
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install torchelastic
-Copy .git .git
 COPY src src
 
 ENV PYTHONPATH "${PYTHONPATH}:/workspace"

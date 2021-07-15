@@ -2,7 +2,6 @@ import json
 import os
 import socket
 import pprint
-import git
 import torch
 from pathlib import Path
 
@@ -39,21 +38,6 @@ def sanity_checks(args):
     assert args.alpha_clm >= 0.0
     assert args.alpha_mse >= 0.0
     assert args.alpha_ce + args.alpha_clm + args.alpha_mse > 0.0
-
-
-def git_log(folder_path: str):
-    """
-    Log commit info.
-    """
-    repo = git.Repo(search_parent_directories=True)
-    repo_infos = {
-        "repo_id": str(repo),
-        "repo_sha": str(repo.head.object.hexsha),
-        "repo_branch": str(repo.active_branch),
-    }
-
-    with open(os.path.join(folder_path, "git_log.json"), "w") as f:
-        json.dump(repo_infos, f, indent=4)
 
 
 def init_gpu_params(params):
@@ -142,8 +126,8 @@ def init_gpu_params(params):
 @click.option('--alpha-mse', type=float, help="Coeff MSE (for distillation)", default=0.0)
 @click.option('--temperature', type=float, help="Temperature (for distillation)", default=1.0)
 @click.option('--gradient-accumulation-steps', '-gas', type=int, default=50)
-@click.option("--n-epoch", type=int, default=3, help="Number of pass on the whole dataset.")
-@click.option("--batch-size", '-bs',  type=int, default=5, help="Batch size (for each process).")
+@click.option("--n-epoch", type=int, default=10, help="Number of pass on the whole dataset.")
+@click.option("--batch-size", '-bs',  type=int, default=2, help="Batch size (for each process).")
 @click.option("--group-by-size", is_flag=True, default=False, help="If true, group sequences that have similar length into the same batch. Default is False.")
 @click.option("--warmup-prop", default=0.05, type=float, help="Linear warmup proportion.")
 @click.option("--weight-decay", default=0.0, type=float, help="Weight deay if we apply some.")
@@ -162,8 +146,8 @@ def init_gpu_params(params):
 @click.option('--elastic', is_flag=True, default=False, help="Enable torch elastic")
 @click.option("--local-rank", type=int, default=-1, help="Distributed training - Local rank")
 @click.option("--seed", type=int, default=56, help="Random seed")
-@click.option("--log-interval", "-li",  type=int, default=500, help="Tensorboard logging interval.")
-@click.option("--checkpoint-interval", "-ci",  type=int, default=4000, help="Checkpoint interval.")
+@click.option("--log-interval", "-li",  type=int, default=100, help="Tensorboard logging interval.")
+@click.option("--checkpoint-interval", "-ci",  type=int, default=1000, help="Checkpoint interval.")
 def train(**args):
     args = Box(args)
     if args.output_dir is None:
@@ -183,7 +167,6 @@ def train(**args):
     logger.info(f"Param: {pprint.pformat(args)}")
     with open(os.path.join(args.output_dir, "parameters.json"), "w") as f:
         json.dump(args.to_dict(), f, indent=4)
-    git_log(args.output_dir)
 
     config_class, model_class, tokenizer_class = GPT2Config, GPT2LMHeadModel, GPT2Tokenizer
 
