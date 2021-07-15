@@ -44,7 +44,7 @@ COPY src src
 
 ENV PYTHONPATH "${PYTHONPATH}:/workspace"
 
-ENTRYPOINT ["python", "-m", "torch.distributed.run", "--nproc_per_node=1", "src/train_lm.py", "--cuda", "--fp16", "--group-by-size", "-bs", "3", "--elastic"]
+ENTRYPOINT ["python", "-m", "torch.distributed.run"]
 CMD ["--help"]
 
 
