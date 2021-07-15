@@ -127,7 +127,7 @@ def init_gpu_params(params):
 @click.option('--temperature', type=float, help="Temperature (for distillation)", default=1.0)
 @click.option('--gradient-accumulation-steps', '-gas', type=int, default=50)
 @click.option("--n-epoch", type=int, default=10, help="Number of pass on the whole dataset.")
-@click.option("--batch-size", '-bs',  type=int, default=3, help="Batch size (for each process).")
+@click.option("--batch-size", '-bs', type=int, default=3, help="Batch size (for each process).")
 @click.option("--group-by-size", is_flag=True, default=False, help="If true, group sequences that have similar length "
                                                                    "into the same batch. Default is False.")
 @click.option("--warmup-prop", default=0.05, type=float, help="Linear warmup proportion.")
@@ -139,16 +139,17 @@ def init_gpu_params(params):
 @click.option('--teacher', type=click.Path(file_okay=True, exists=True), default=None, help='Path to teacher '
                                                                                             'checkpoint (for '
                                                                                             'distillation)')
-@click.option('--pretrained-weights', type=click.Path(file_okay=True, exists=True), default=None, help='Path to '
-                                                                                                       'teacher '
-                                                                                                       'checkpoint')
+@click.option('--pretrained-model', type=click.Path(file_okay=True, exists=True), default=None, help='Path to '
+                                                                                                      'pretrained '
+                                                                                                      'model')
+@click.option('--bootstrap-from-gpt2', is_flag=True, help="Uses HuggingFace GPT2 pretrained model to start with")
 @click.option("--n-gpu", type=int, default=0, help="Number of GPUs in the node.")
 @click.option('--fp16', is_flag=True, default=False, help="Use half precision")
 @click.option('--elastic', is_flag=True, default=False, help="Enable torch elastic")
 @click.option("--local-rank", type=int, default=-1, help="Distributed training - Local rank")
 @click.option("--seed", type=int, default=56, help="Random seed")
-@click.option("--log-interval", "-li",  type=int, default=100, help="Tensorboard logging interval.")
-@click.option("--checkpoint-interval", "-ci",  type=int, default=1000, help="Checkpoint interval.")
+@click.option("--log-interval", "-li", type=int, default=100, help="Tensorboard logging interval.")
+@click.option("--checkpoint-interval", "-ci", type=int, default=1000, help="Checkpoint interval.")
 def train(**args):
     args = Box(args)
     if args.output_dir is None:
@@ -160,6 +161,13 @@ def train(**args):
     args.fp16_opt_level = "O1"
     args.cache_dir = f"{args.input_dir}/.cache"
     Path(args.cache_dir).mkdir(exist_ok=True)
+
+    if args.bootstrap_from_gpt2:
+        assert args.pretrained_model is None, "Already bootstraping from GPT2"
+        args.n_head = 12
+        args.n_layer = 12
+        args.n_embd = 768
+
     sanity_checks(args)
     init_gpu_params(args)
 
@@ -185,16 +193,22 @@ def train(**args):
     logger.info("Data loaded!")
 
     # STUDENT #
-    student_config = GPT2Config.from_pretrained("gpt2-medium")
+    student_config = GPT2Config.from_pretrained("gpt2")
     student_config.n_head = args.n_head
     student_config.n_layer = args.n_layer
     student_config.n_embd = args.n_embd
     student_config.output_hidden_states = False
     # Fix because now the default is return_dict=True
     logger.info(f"Loaded model config: {pprint.pformat(student_config)}")
-    if args.pretrained_weights is not None:
-        logger.info(f"Loading pretrained weights from {args.pretrained_weights}")
-        student = model_class.from_pretrained(args.pretrained_weights, config=student_config)
+    if args.pretrained_model is not None:
+        logger.info(f"Loading pretrained weights from {args.pretrained_model}")
+        student = model_class.from_pretrained(args.pretrained_model)
+        assert student.n_head == student_config.n_head and student.n_layer == student_config.n_layer and \
+               student.n_embd == student_config.n_embd, "Pretrained doesn't doesn't match with the specified args"
+    elif args.bootstrap_from_gpt2:
+        logger.info('--Bootstraping from GPT2 model')
+        student = model_class.from_pretrained("gpt2", cache_dir=args.cache_dir)
+        student.config = student_config
     else:
         student = model_class(student_config)
 

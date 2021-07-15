@@ -35,12 +35,13 @@ from transformers import get_linear_schedule_with_warmup
 from torch.utils.tensorboard import SummaryWriter
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class GPT2Trainer:
     def __init__(
-        self, params: dict, dataset, collate_fn, student: nn.Module, teacher: nn.Module
+            self, params: dict, dataset, collate_fn, student: nn.Module, teacher: nn.Module
     ):
         logger.info("Initializing Trainer")
         self.params = params
@@ -98,7 +99,7 @@ class GPT2Trainer:
         assert params.gradient_accumulation_steps >= 1
         self.num_steps_epoch = len(self.dataloader)
         num_train_optimization_steps = (
-            int(self.num_steps_epoch / params.gradient_accumulation_steps * params.n_epoch) + 1
+                int(self.num_steps_epoch / params.gradient_accumulation_steps * params.n_epoch) + 1
         )
 
         no_decay = ["bias", "LayerNorm.weight"]
@@ -259,7 +260,7 @@ class GPT2Trainer:
                 continue
 
             if self.is_master:
-                logger.info(f"--- Starting epoch {self.epoch}/{self.params.n_epoch-1}")
+                logger.info(f"--- Starting epoch {self.epoch}/{self.params.n_epoch - 1}")
             if self.multi_gpu:
                 torch.distributed.barrier()
 
@@ -280,7 +281,8 @@ class GPT2Trainer:
                     self.step_no_teacher(input_ids=token_ids, lm_labels=lm_labels)
 
                 # iter_bar.update()
-                post_fix = {"Last_loss": f"{self.last_loss:.2f}", "Avg_cum_loss": f"{self.total_loss_epoch/self.n_iter:.2f}"}
+                post_fix = {"Last_loss": f"{self.last_loss:.2f}",
+                            "Avg_cum_loss": f"{self.total_loss_epoch / self.n_iter:.2f}"}
                 if self.alpha_clm > 0:
                     post_fix.update({
                         "CLM_loss": f"{self.last_loss_clm:.2f}",
@@ -291,7 +293,7 @@ class GPT2Trainer:
             iter_bar.close()
 
             if self.is_master:
-                logger.info(f"--- Ending epoch {self.epoch}/{self.params.n_epoch-1}")
+                logger.info(f"--- Ending epoch {self.epoch}/{self.params.n_epoch - 1}")
             self.end_epoch()
 
         if self.is_master:
@@ -369,11 +371,11 @@ class GPT2Trainer:
         assert t_logits_slct.size() == s_logits_slct.size()
 
         loss_ce = (
-            self.ce_loss_fct(
-                F.log_softmax(s_logits_slct / self.temperature, dim=-1),
-                F.softmax(t_logits_slct / self.temperature, dim=-1),
-            )
-            * (self.temperature) ** 2
+                self.ce_loss_fct(
+                    F.log_softmax(s_logits_slct / self.temperature, dim=-1),
+                    F.softmax(t_logits_slct / self.temperature, dim=-1),
+                )
+                * (self.temperature) ** 2
         )
         loss = self.alpha_ce * loss_ce
         if self.alpha_clm > 0.0:
@@ -441,7 +443,7 @@ class GPT2Trainer:
         self.n_iter += 1
         self.n_total_iter += 1
 
-        if (self.n_total_iter-1) % self.params.log_interval == 0:
+        if (self.n_total_iter - 1) % self.params.log_interval == 0:
             self.log_tensorboard()
             self.last_log = time.time()
         if (self.n_total_iter - 1) % self.params.checkpoint_interval == 0:
@@ -535,8 +537,15 @@ class GPT2Trainer:
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cpu")
 
         mdl_to_save = self.student.module if hasattr(self.student, "module") else self.student
+        loaded_config = mdl_to_save.config.__class__.from_dict(state['config'])
+        assert mdl_to_save.config.n_head == loaded_config.n_head and mdl_to_save.config.n_layer == loaded_config.n_layer and \
+               mdl_to_save.config.n_embd == loaded_config.n_embd, "Checkpoint config doesn't match specified config!"
+
+        mdl_to_save.config = loaded_config
         mdl_to_save.load_state_dict(state['model_state_dict'])
-        mdl_to_save.config = mdl_to_save.config.__class__.from_dict(state['config'])
+
+        assert mdl_to_save.config['n_layers']
+
         self.optimizer.load_state_dict(state['optimizer_state_dict'])
         self.epoch = state['epoch']
         self.n_iter = state['iteration']
