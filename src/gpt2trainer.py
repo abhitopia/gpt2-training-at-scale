@@ -335,6 +335,8 @@ class GPT2Trainer:
         self.last_loss = loss.item()
         if self.alpha_clm > 0.0:
             self.last_loss_clm = loss_clm.item()
+            self.total_clm_loss_epoch += loss_clm.item()
+
         self.optimize(loss)
         self.n_sequences_epoch += input_ids.size(0)
 
@@ -543,8 +545,6 @@ class GPT2Trainer:
 
         mdl_to_save.config = loaded_config
         mdl_to_save.load_state_dict(state['model_state_dict'])
-
-        assert mdl_to_save.config['n_layers']
 
         self.optimizer.load_state_dict(state['optimizer_state_dict'])
         self.epoch = state['epoch']
