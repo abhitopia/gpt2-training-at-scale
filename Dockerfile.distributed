@@ -32,6 +32,7 @@ COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install torchelastic
 
+RUN apt-get -q update && apt-get -q install -y wget unzip
 COPY install_etcd install_etcd
 RUN chmod -R u+x install_etcd
 RUN mkdir -p bin
