@@ -59,16 +59,15 @@ def init_gpu_params(params):
         assert params.local_rank != -1
 
         params.world_size = int(os.environ["WORLD_SIZE"])
-        params.n_gpu_per_node = params.n_gpu
+        params.n_gpu_per_node = int(os.environ["LOCAL_WORLD_SIZE"])
+        params.n_gpu = params.n_gpu_per_node
+        params.node_rank = int(os.environ['GROUP_RANK'])
         params.global_rank = int(os.environ["RANK"])
 
         # number of nodes / node ID
         params.n_nodes = params.world_size // params.n_gpu_per_node
-        params.node_id = params.global_rank // params.n_gpu_per_node
+        params.node_id = int(os.environ['GROUP_RANK'])
         params.multi_gpu = True
-
-        assert params.n_nodes == int(os.environ["N_NODES"])
-        assert params.node_id == int(os.environ["NODE_RANK"])
 
     # local job (single GPU)
     else:
@@ -143,7 +142,7 @@ def init_gpu_params(params):
                                                                                                       'pretrained '
                                                                                                       'model')
 @click.option('--bootstrap-from-gpt2', is_flag=True, help="Uses HuggingFace GPT2 pretrained model to start with")
-@click.option("--n-gpu", type=int, default=0, help="Number of GPUs per node.")
+@click.option('--cuda', is_flag=True, default=False, help="Whether to use gpu")
 @click.option('--fp16', is_flag=True, default=False, help="Use half precision")
 @click.option('--elastic', is_flag=True, default=False, help="Enable torch elastic")
 @click.option('--freeze-pos-embs', is_flag=True, default=False, help="Freeze positional embedding")
@@ -160,6 +159,7 @@ def train(**args):
     args.vocab_size = 50257
     args.fp16_opt_level = "O1"
     args.local_rank = -1
+    args.n_gpu = 1 if args.cuda else 0
     args.cache_dir = f"{args.input_dir}/.cache"
     Path(args.cache_dir).mkdir(exist_ok=True)
 
