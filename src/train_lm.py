@@ -56,11 +56,10 @@ def init_gpu_params(params):
     logger.info("Initializing GPUs")
     if params.n_gpu > 1 or params.elastic:
         params.local_rank = int(os.environ["LOCAL_RANK"])
-        params.n_gpu = int(os.environ["N_GPU_NODE"])
         assert params.local_rank != -1
 
         params.world_size = int(os.environ["WORLD_SIZE"])
-        params.n_gpu_per_node = int(os.environ["N_GPU_NODE"])
+        params.n_gpu_per_node = params.n_gpu
         params.global_rank = int(os.environ["RANK"])
 
         # number of nodes / node ID
@@ -144,7 +143,7 @@ def init_gpu_params(params):
                                                                                                       'pretrained '
                                                                                                       'model')
 @click.option('--bootstrap-from-gpt2', is_flag=True, help="Uses HuggingFace GPT2 pretrained model to start with")
-@click.option("--n-gpu", type=int, default=0, help="Number of GPUs in the node.")
+@click.option("--n-gpu", type=int, default=0, help="Number of GPUs per node.")
 @click.option('--fp16', is_flag=True, default=False, help="Use half precision")
 @click.option('--elastic', is_flag=True, default=False, help="Enable torch elastic")
 @click.option('--freeze-pos-embs', is_flag=True, default=False, help="Freeze positional embedding")
