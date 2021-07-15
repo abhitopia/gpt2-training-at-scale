@@ -54,7 +54,9 @@ def init_gpu_params(params):
     assert torch.cuda.is_available()
 
     logger.info("Initializing GPUs")
-    if params.n_gpu > 1:
+    if params.n_gpu > 1 or params.elastic:
+        params.local_rank = int(os.environ["LOCAL_RANK"])
+        params.n_gpu = int(os.environ["N_GPU_NODE"])
         assert params.local_rank != -1
 
         params.world_size = int(os.environ["WORLD_SIZE"])
@@ -72,7 +74,6 @@ def init_gpu_params(params):
     # local job (single GPU)
     else:
         assert params.local_rank == -1
-
         params.n_nodes = 1
         params.node_id = 0
         params.local_rank = 0
@@ -146,7 +147,7 @@ def init_gpu_params(params):
 @click.option("--n-gpu", type=int, default=0, help="Number of GPUs in the node.")
 @click.option('--fp16', is_flag=True, default=False, help="Use half precision")
 @click.option('--elastic', is_flag=True, default=False, help="Enable torch elastic")
-@click.option("--local-rank", type=int, default=-1, help="Distributed training - Local rank")
+@click.option('--freeze-pos-embs', is_flag=True, default=False, help="Freeze positional embedding")
 @click.option("--seed", type=int, default=56, help="Random seed")
 @click.option("--log-interval", "-li", type=int, default=100, help="Tensorboard logging interval.")
 @click.option("--checkpoint-interval", "-ci", type=int, default=1000, help="Checkpoint interval.")
@@ -159,6 +160,7 @@ def train(**args):
     args.tokenizer_name = args.student_type = args.teacher_type = "gpt2"
     args.vocab_size = 50257
     args.fp16_opt_level = "O1"
+    args.local_rank = -1
     args.cache_dir = f"{args.input_dir}/.cache"
     Path(args.cache_dir).mkdir(exist_ok=True)
 
@@ -225,6 +227,9 @@ def train(**args):
         if args.n_gpu > 0:
             teacher.to(f"cuda:{args.local_rank}")
         logger.info(f"Teacher loaded from {args.teacher}.")
+
+    if args.freeze_pos_embs or args.bootstrap_from_gpt2:
+        student.transformer.wpe.weight.requires_grad = False
 
     torch.cuda.empty_cache()
     trainer = GPT2Trainer(params=args, dataset=ds, collate_fn=batch_sequences_collate_fn, student=student,

@@ -43,7 +43,9 @@ ENV PATH=/workspace/bin:${PATH}
 COPY src src
 
 ENV PYTHONPATH "${PYTHONPATH}:/workspace"
-ENTRYPOINT ["python", "src/train_lm.py"]
+
+ENTRYPOINT ["python", "-m", "torch.distributed.run", "--nproc_per_node=1", "src/train_lm.py",
+            "--n-gpu", "1", "--fp16", "--group-by-size", "-bs", "3", "--elastic"]
 CMD ["--help"]
 
 

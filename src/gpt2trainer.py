@@ -533,7 +533,7 @@ class GPT2Trainer:
         if self.multi_gpu:
             device_id = self.params.local_rank
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cuda:{device_id}")
-        elif self.params.n_gpu == 1:
+        elif self.params.n_gpu_per_node == 1:
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cuda")
         else:
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cpu")
