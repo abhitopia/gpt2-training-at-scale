@@ -2,9 +2,10 @@ import torch
 from pathlib import Path
 from datasets import load_dataset
 from transformers import GPT2Tokenizer
+import multiprocessing as mp
 
 
-def get_json_dataset(input_dir, cache_dir):
+def get_json_dataset(input_dir, cache_dir, cpu_count=None):
     input_dir = Path(input_dir)
     cache_dir = str(Path(cache_dir).absolute())
     assert input_dir.exists()
@@ -53,16 +54,18 @@ def get_json_dataset(input_dir, cache_dir):
 
                 samples['input_ids'].extend(sub_seqs)
                 samples['seq_lengths'].extend([len(l) for l in sub_seqs])
-
         return samples
 
     tds = ds.map(tokenize_function,
                  batched=True,
                  batch_size=10,
-                 num_proc=None,
+                 num_proc=cpu_count or mp.cpu_count(),
                  remove_columns=['text'])
 
-    return tds['train']
+    lengths = [s['seq_lengths'] for s in tds['train']]
+    ds = tds['train']
+    ds.lengths = lengths
+    return ds
 
 
 def batch_sequences_collate_fn(batch):

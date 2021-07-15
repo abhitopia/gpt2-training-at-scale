@@ -127,8 +127,9 @@ def init_gpu_params(params):
 @click.option('--temperature', type=float, help="Temperature (for distillation)", default=1.0)
 @click.option('--gradient-accumulation-steps', '-gas', type=int, default=50)
 @click.option("--n-epoch", type=int, default=10, help="Number of pass on the whole dataset.")
-@click.option("--batch-size", '-bs',  type=int, default=2, help="Batch size (for each process).")
-@click.option("--group-by-size", is_flag=True, default=False, help="If true, group sequences that have similar length into the same batch. Default is False.")
+@click.option("--batch-size", '-bs',  type=int, default=3, help="Batch size (for each process).")
+@click.option("--group-by-size", is_flag=True, default=False, help="If true, group sequences that have similar length "
+                                                                   "into the same batch. Default is False.")
 @click.option("--warmup-prop", default=0.05, type=float, help="Linear warmup proportion.")
 @click.option("--weight-decay", default=0.0, type=float, help="Weight deay if we apply some.")
 @click.option("--learning-rate", '-lr', default=5e-4, type=float, help="The initial learning rate for Adam.")
