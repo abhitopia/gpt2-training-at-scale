@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: explorer-deployment
+  namespace: elastic-job
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: explorer
+  template:
+    metadata:
+      labels:
+        app: explorer
+    spec:
+      containers:
+      - name: explorer
+        image: abhitopia/elasticgpt2trainer:rc1
+        command: [ "/bin/sh" ]
+        args: [ "-c", "while true; do sleep 10; done" ]
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: /data
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: efs-claim
+
+
+

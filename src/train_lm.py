@@ -33,6 +33,8 @@ def sanity_checks(args):
 
     if args.teacher is None:
         assert args.alpha_ce == 0.0 and args.alpha_mse == 0.0 and args.alpha_clm == 1.0
+    else:
+        assert args.alpha_ce > 0.0
 
     assert args.alpha_ce >= 0.0
     assert args.alpha_clm >= 0.0
@@ -233,7 +235,11 @@ def train(**args):
     torch.cuda.empty_cache()
     trainer = GPT2Trainer(params=args, dataset=ds, collate_fn=batch_sequences_collate_fn, student=student,
                           teacher=teacher)
-    trainer.train()
+
+    if teacher is None:
+        trainer.train()
+    else:
+        trainer.distill()
 
 
 if __name__ == '__main__':

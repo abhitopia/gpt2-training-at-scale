@@ -131,3 +131,5 @@ dmypy.json
 elastic/*
 
 data/*
+/elastic/
+/models/

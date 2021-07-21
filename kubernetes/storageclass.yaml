@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"name":"efs-sc"},"parameters":{"basePath":"/dynamic_provisioning","directoryPerms":"700","fileSystemId":"fs-28759a2e","gidRangeEnd":"2000","gidRangeStart":"1000","provisioningMode":"efs-ap"},"provisioner":"efs.csi.aws.com"}
+  creationTimestamp: "2021-07-13T16:38:51Z"
+  name: efs-sc
+  resourceVersion: "15729"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/efs-sc
+  uid: a2d46d7d-4a30-4598-8024-6ba00085bac6
+parameters:
+  basePath: /dynamic_provisioning
+  directoryPerms: "700"bd
+  fileSystemId: fs-28759a2e
+  gidRangeEnd: "2000"
+  gidRangeStart: "1000"
+  provisioningMode: efs-ap
+provisioner: efs.csi.aws.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
