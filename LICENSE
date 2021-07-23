@@ -19,3 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+E0721 16:45:01.372124       1 reflector.go:125] pkg/mod/k8s.io/client-go@v0.15.10/tools/cache/reflector.go:98:
+Failed to list *v1alpha1.ElasticJob: v1alpha1.ElasticJobList.Items: []v1alpha1.ElasticJob: v1alpha1.ElasticJob.Spec: v1alpha1.ElasticJobSpec.ReplicaSpecs: v1.ReplicaSpec.Template: v1.PodTemplateSpec.Spec: v1.PodSpec.Containers: []v1.Container: v1.Container.Args: []string: ReadString: expects " or n, but found 6, error found in #10 byte of ...|r","-nh",6,"-nl",4,"|..., bigger context ...|","--teacher","/data/se_gpt2_v2/model_dir","-nh",6,"-nl",4,"-ne",384,"--temperature",2,"--alpha-ce",|...
