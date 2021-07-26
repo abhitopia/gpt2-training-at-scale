@@ -133,3 +133,5 @@ elastic/*
 data/*
 /elastic/
 /models/
+/data/
+/.cache/

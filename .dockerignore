@@ -1,2 +1,5 @@
 elastic/*
 data/*
+models/*
+.cache/*
+.cache/*

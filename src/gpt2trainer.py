@@ -550,6 +550,9 @@ class GPT2Trainer:
         self.epoch = state['epoch']
         self.n_iter = state['iteration']
         self.n_total_iter = state['total_iteration']
+        self.total_clm_loss_epoch = state.get('total_clm_loss_epoch', self.total_clm_loss_epoch)
+        self.total_loss_epoch = state.get('total_loss_epoch', self.total_loss_epoch)
+        self.n_sequences_epoch = state.get('n_sequences_epoch', self.n_sequences_epoch)
         logger.info(f'---Resuming from epoch: {self.epoch} and iteration: {self.n_iter}')
 
     def save_checkpoint(self, checkpoint_name: str = "checkpoint.pth"):
@@ -565,6 +568,9 @@ class GPT2Trainer:
         state = {
             'model_state_dict': mdl_to_save.state_dict(),
             'iteration': self.n_iter,
+            'n_sequences_epoch': self.n_sequences_epoch,
+            'total_loss_epoch': self.total_loss_epoch,
+            'total_clm_loss_epoch': self.total_clm_loss_epoch,
             'total_iteration': self.n_total_iter,
             'epoch': self.epoch,
             'config': mdl_to_save.config.to_dict(),
