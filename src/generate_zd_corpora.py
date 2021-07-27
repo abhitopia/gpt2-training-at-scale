@@ -6,10 +6,10 @@ from transformers import GPT2Tokenizer
 
 from src.data.zendesk import ZendeskTicketGen
 
-datapath = Path('data/zd_datasets')
+datapath = Path('/mnt/disks/training_disk/zendesk_datasets')
 cache_dir = Path('.cache')
 cache_dir.mkdir(exist_ok=True)
-output_path = Path('data/json_files')
+output_path = Path('/mnt/disks/training_disk/json_files')
 zips = datapath.glob('*.zip')
 bos_token = ' <|endoftext|> '
 
@@ -20,6 +20,7 @@ for f in tqdm(zips):
 
     if output_file.exists():
         continue
+    print(f)
     gen = ZendeskTicketGen(paths=f, cache_dir=cache_dir, num_workers=0)
 
     data = {'data': []}
