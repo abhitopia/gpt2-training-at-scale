@@ -21,11 +21,15 @@ for f in tqdm(zips):
     if output_file.exists():
         continue
     print(f)
-    gen = ZendeskTicketGen(paths=f, cache_dir=cache_dir, num_workers=0)
+    gen = ZendeskTicketGen(paths=f, cache_dir=cache_dir, num_workers=2)
 
-    data = {'data': []}
-    for ticket in tqdm(gen, leave=True):
-        line = bos_token.join([c.text.strip() for c in ticket.comments])
-        data['data'].append({'text': line})
+    try:
+        data = {'data': []}
+        for ticket in tqdm(gen, leave=True):
+            line = bos_token.join([c.text.strip() for c in ticket.comments])
+            data['data'].append({'text': line})
 
-    json.dump(data, output_file.open('w', encoding='utf8'), indent=4, ensure_ascii=False)
+        json.dump(data, output_file.open('w', encoding='utf8'), indent=4, ensure_ascii=False)
+    except Exception:
+        print(f'Skipping {f}')
+        continue
