@@ -13,7 +13,7 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
 
     block_size_10MB = 10 << 20
     ds = load_dataset('json', data_files=files, field='data', block_size=block_size_10MB,
-                      keep_in_memory=False, cache_dir=cache_dir, streaming=True)
+                      keep_in_memory=False, cache_dir=cache_dir, streaming=False)
 
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
