@@ -1,0 +1,47 @@
+apiVersion: elastic.pytorch.org/v1alpha1
+kind: ElasticJob
+metadata:
+  name: gpt2-train-job
+  namespace: elastic-job
+spec:
+  RunPolicy:
+    cleanPodPolicy: None
+  maxReplicas: 8
+  minReplicas: 1
+  rdzvEndpoint: etcd-service:2379
+  replicaSpecs:
+    Worker:
+      replicas: 8
+      restartPolicy: Always
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - args:
+            - --nproc_per_node=1
+            - src/train_lm.py
+            - --cuda
+            - --fp16
+            - --group-by-size
+            - -bs
+            - "3"
+            - --bootstrap-from-gpt2
+            - --elastic
+            - -i
+            - /data/zd_cs
+            - -o
+            - /data/zd_cs_gpt2_v1
+            image: abhitopia/elasticgpt2trainer:rc1
+            imagePullPolicy: Always
+            name: elastic-gpt2-trainer-worker
+            resources:
+              limits:
+                nvidia.com/gpu: "1"
+            volumeMounts:
+            - mountPath: /data
+              name: persistent-storage
+          volumes:
+          - name: persistent-storage
+            persistentVolumeClaim:
+              claimName: efs-claim
