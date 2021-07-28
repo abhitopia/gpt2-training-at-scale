@@ -1,12 +1,12 @@
 apiVersion: elastic.pytorch.org/v1alpha1
 kind: ElasticJob
 metadata:
-  name: gpt2-train-job
+  name: gpt2-train-job-cpu
   namespace: elastic-job
 spec:
   RunPolicy:
     cleanPodPolicy: None
-  maxReplicas: 8
+  maxReplicas: 2
   minReplicas: 1
   rdzvEndpoint: etcd-service:2379
   replicaSpecs:
@@ -21,7 +21,6 @@ spec:
           - args:
             - --nproc_per_node=1
             - src/train_lm.py
-            - --cuda
             - --fp16
             - --group-by-size
             - -bs

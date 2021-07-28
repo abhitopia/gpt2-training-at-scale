@@ -10,7 +10,10 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
     cache_dir = str(Path(cache_dir).absolute())
     assert input_dir.exists()
     files = list(str(f.absolute()) for f in input_dir.glob('*.json'))
-    ds = load_dataset('json', data_files=files, field='data', keep_in_memory=False, cache_dir=cache_dir)
+
+    block_size_10MB = 10 << 20
+    ds = load_dataset('json', data_files=files, field='data', block_size=block_size_10MB,
+                      keep_in_memory=False, cache_dir=cache_dir, streaming=True)
 
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
