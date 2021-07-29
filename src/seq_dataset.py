@@ -62,14 +62,19 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
                 samples['seq_lengths'].extend([len(l) for l in sub_seqs])
         return samples
 
-    tds = ds.map(tokenize_function,
-                 batched=True,
-                 batch_size=10,
-                 num_proc=cpu_count or mp.cpu_count(),
-                 keep_in_memory=False,
-                 remove_columns=['text'])
+    ds = ds['train']
+    print('Loaded json files, now tokenizing the data!')
 
-    ds = tds['train']
+    # This is done so not a lot of time is spent computing the hash from huge dataset from previous step
+    cache_file = Path(cache_dir) / f"{ds._fingerprint}_map.cache"
+
+    ds = ds.map(tokenize_function,
+                batched=True,
+                batch_size=10,
+                num_proc=cpu_count or mp.cpu_count(),
+                keep_in_memory=False,
+                cache_file_name=str(cache_file.absolute()),
+                remove_columns=['text'])
 
     lengths_file = Path(cache_dir) / f"{ds._fingerprint}_lengths.cache"
 
@@ -102,7 +107,6 @@ def batch_sequences_collate_fn(batch):
     tk_t = torch.tensor(tk_)  # (bs, max_seq_len_)
     lg_t = torch.tensor(lengths)  # (bs)
     return tk_t, lg_t
-
 
 # if __name__ == '__main__':
 #     ds = get_json_dataset('data/se/', 'data/se/.cache')
