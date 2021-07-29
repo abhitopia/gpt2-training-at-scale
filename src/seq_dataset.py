@@ -1,6 +1,9 @@
+import pickle
+
 import torch
 from pathlib import Path
 from datasets import load_dataset
+from tqdm import tqdm
 from transformers import GPT2Tokenizer
 import multiprocessing as mp
 
@@ -63,10 +66,20 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
                  batched=True,
                  batch_size=10,
                  num_proc=cpu_count or mp.cpu_count(),
+                 keep_in_memory=False,
                  remove_columns=['text'])
 
-    lengths = [s['seq_lengths'] for s in tds['train']]
     ds = tds['train']
+
+    lengths_file = Path(cache_dir) / f"{ds._fingerprint}_lengths.cache"
+
+    if lengths_file.exists():
+        lengths = pickle.load(lengths_file.open('rb'))
+    else:
+        lengths = []
+        for s in tqdm(ds, desc="Loading lengths"):
+            lengths.append(s['seq_lengths'])
+        pickle.dump(lengths, lengths_file.open('wb'))
     ds.lengths = lengths
     return ds
 
