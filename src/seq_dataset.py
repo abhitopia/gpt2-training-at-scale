@@ -1,14 +1,45 @@
 import pickle
+import random
 
 import torch
 from pathlib import Path
 from datasets import load_dataset
-from tqdm import tqdm
+from torch.utils.data import Dataset
 from transformers import GPT2Tokenizer
 import multiprocessing as mp
 
 
-def get_json_dataset(input_dir, cache_dir, cpu_count=None):
+class StreamingDataset(Dataset):
+    def __init__(self, iterable_dataset, seed, max_size=10_000_000):
+        self._idx = -1
+        self.max_size = max_size
+        self.ids = iterable_dataset
+        self.seed = seed
+        self.ids = self.ids.shuffle(seed=self.seed, buffer_size=1000)
+        self.iter = iter(self.ids)
+        self.buffer = []
+
+    def get_next(self, item):
+        try:
+            return next(self.iter)
+        except StopIteration:
+            self.ids = self.ids.shuffle(seed=self.seed + item, buffer_size=1000)
+            self.iter = iter(self.ids)
+            return next(self.iter)
+
+    def __getitem__(self, item):
+        if len(self.buffer) == 0:
+            tmp = self.get_next(item)
+            self.buffer = [{'input_ids': inp, 'seq_lengths': lens} for inp, lens in
+                           zip(tmp['input_ids'], tmp['seq_lengths'])]
+        sample = self.buffer.pop()
+        return sample
+
+    def __len__(self):
+        return self.max_size
+
+
+def get_json_dataset(input_dir, cache_dir, cpu_count=None, streaming=False, rank=0):
     input_dir = Path(input_dir)
     cache_dir = str(Path(cache_dir).absolute())
     assert input_dir.exists()
@@ -16,7 +47,7 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
 
     block_size_10MB = 10 << 20
     ds = load_dataset('json', data_files=files, field='data', block_size=block_size_10MB,
-                      keep_in_memory=False, cache_dir=cache_dir, streaming=False)
+                      keep_in_memory=False, cache_dir=cache_dir, streaming=streaming)
 
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
@@ -31,8 +62,8 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
             return [l[i: i + n] for i in range(0, len(l), n)]
 
         cls_id, sep_id = tokenizer.bos_token_id, tokenizer.eos_token_id
-
-        for article in examples['text']:
+        articles = [examples['text']] if not isinstance(examples['text'], list) else examples['text']
+        for article in articles:
             if article[-2:] == ' .':
                 article = article[:-2] + '.'
 
@@ -60,32 +91,28 @@ def get_json_dataset(input_dir, cache_dir, cpu_count=None):
 
                 samples['input_ids'].extend(sub_seqs)
                 samples['seq_lengths'].extend([len(l) for l in sub_seqs])
+
         return samples
 
     ds = ds['train']
-    print('Loaded json files, now tokenizing the data!')
-
-    # This is done so not a lot of time is spent computing the hash from huge dataset from previous step
-    cache_file = Path(cache_dir) / f"{ds._fingerprint}_map.cache"
-
-    ds = ds.map(tokenize_function,
-                batched=True,
-                batch_size=10,
-                num_proc=cpu_count or mp.cpu_count(),
-                keep_in_memory=False,
-                cache_file_name=str(cache_file.absolute()),
-                remove_columns=['text'])
-
-    lengths_file = Path(cache_dir) / f"{ds._fingerprint}_lengths.cache"
-
-    if lengths_file.exists():
-        lengths = pickle.load(lengths_file.open('rb'))
+    if streaming:
+        ds = ds.shuffle(buffer_size=1000, seed=42)
+        ds = ds.map(tokenize_function)
+        ds = StreamingDataset(iterable_dataset=ds, seed=42+rank)
     else:
-        lengths = []
-        for s in tqdm(ds, desc="Loading lengths"):
-            lengths.append(s['seq_lengths'])
-        pickle.dump(lengths, lengths_file.open('wb'))
-    ds.lengths = lengths
+        print('Loaded json files, now tokenizing the data!')
+        cache_file = Path(cache_dir) / f"{ds._fingerprint}_map.cache"
+
+        ds = ds.map(tokenize_function,
+                    batched=True,
+                    batch_size=10,
+                    num_proc=cpu_count or mp.cpu_count(),
+                    keep_in_memory=False,
+                    cache_file_name=str(cache_file.absolute()),
+                    remove_columns=['text']
+                    )
+
+        ds.lengths = ds['seq_lengths']
     return ds
 
 

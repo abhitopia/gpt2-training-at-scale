@@ -151,6 +151,7 @@ def init_gpu_params(params):
 @click.option("--seed", type=int, default=56, help="Random seed")
 @click.option("--log-interval", "-li", type=int, default=100, help="Tensorboard logging interval.")
 @click.option("--checkpoint-interval", "-ci", type=int, default=1000, help="Checkpoint interval.")
+@click.option("--streaming", is_flag=True, default=False, help="For humungous datasets")
 def train(**args):
     args = Box(args)
     if args.output_dir is None:
@@ -192,7 +193,11 @@ def train(**args):
     args.special_tok_ids = special_tok_ids
     args.max_model_input_size = tokenizer.max_model_input_sizes[args.teacher_type]
 
-    ds = get_json_dataset(args.input_dir, args.cache_dir)
+    if hasattr(args, 'global_rank'):
+        rank = args.global_rank
+    else:
+        rank = args.local_rank
+    ds = get_json_dataset(args.input_dir, args.cache_dir, streaming=args.streaming, rank=rank)
     logger.info("Data loaded!")
 
     # STUDENT #

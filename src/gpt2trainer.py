@@ -62,7 +62,7 @@ class GPT2Trainer:
         else:
             sampler = DistributedSampler(dataset)
 
-        if params.group_by_size:
+        if params.group_by_size and hasattr(dataset, 'lengths'):
             groups = create_lengths_groups(lengths=dataset.lengths, k=params.max_model_input_size)
             sampler = GroupedBatchSampler(sampler=sampler, group_ids=groups, batch_size=params.batch_size)
         else:
@@ -533,7 +533,7 @@ class GPT2Trainer:
         if self.multi_gpu:
             device_id = self.params.local_rank
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cuda:{device_id}")
-        elif self.params.n_gpu_per_node == 1:
+        elif hasattr(self.params, 'n_gpu_per_node') and self.params.n_gpu_per_node == 1:
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cuda")
         else:
             state = torch.load(os.path.join(self.dump_path, checkpoint_name), map_location=f"cpu")
