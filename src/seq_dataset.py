@@ -28,7 +28,7 @@ class StreamingDataset(Dataset):
             return next(self.iter)
 
     def __getitem__(self, item):
-        if len(self.buffer) == 0:
+        while len(self.buffer) == 0:
             tmp = self.get_next(item)
             self.buffer = [{'input_ids': inp, 'seq_lengths': lens} for inp, lens in
                            zip(tmp['input_ids'], tmp['seq_lengths'])]
