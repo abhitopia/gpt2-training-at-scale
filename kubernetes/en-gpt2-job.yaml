@@ -25,7 +25,7 @@ spec:
             - --fp16
             - --group-by-size
             - -bs
-            - "3"
+            - "2"
             - --bootstrap-from-gpt2
             - --elastic
             - --streaming
@@ -33,7 +33,7 @@ spec:
             - /data/zd_cs
             - -o
             - /data/zd_cs_gpt2_v1
-            image: abhitopia/elasticgpt2trainer:rc7
+            image: abhitopia/elasticgpt2trainer:rc8
             imagePullPolicy: Always
             name: elastic-gpt2-trainer-worker
             resources:

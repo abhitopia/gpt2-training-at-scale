@@ -1,7 +1,7 @@
 apiVersion: elastic.pytorch.org/v1alpha1
 kind: ElasticJob
 metadata:
-  name: gpt2-train-job-cpu-rc6
+  name: gpt2-train-job-cpu-rc8
   namespace: elastic-job
 spec:
   RunPolicy:
@@ -31,7 +31,7 @@ spec:
             - /data/zd_cs
             - -o
             - /data/zd_cs_gpt2_v1
-            image: abhitopia/elasticgpt2trainer:rc7
+            image: abhitopia/elasticgpt2trainer:rc8
             imagePullPolicy: Always
             name: elastic-gpt2-trainer-worker
             volumeMounts:

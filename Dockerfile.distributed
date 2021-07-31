@@ -38,7 +38,7 @@ RUN chmod -R u+x install_etcd
 RUN mkdir -p bin
 RUN ./install_etcd -d bin
 ENV PATH=/workspace/bin:${PATH}
-ENV NCCL_ASYNC_ERROR_HANDLING=1
+# ENV NCCL_ASYNC_ERROR_HANDLING=1
 
 COPY src src
 
