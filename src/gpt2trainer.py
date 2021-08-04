@@ -20,6 +20,7 @@ import os
 import time
 from pathlib import Path
 
+import numpy as np
 import psutil
 import torch
 import torch.nn as nn
@@ -81,6 +82,7 @@ class GPT2Trainer:
         self.epoch = 0
         self.n_iter = 0
         self.n_total_iter = 0
+        self.best_loss = np.Inf
         self.n_sequences_epoch = 0
         self.total_loss_epoch = 0
         self.total_clm_loss_epoch = 0
@@ -525,6 +527,8 @@ class GPT2Trainer:
 
     def load_checkpoint(self, checkpoint_name: str = "checkpoint.pth"):
 
+        best_checkpoint_name = f"{checkpoint_name}.best"
+        best_checkpoint_path = os.path.join(self.dump_path, best_checkpoint_name)
         checkpoint_path = os.path.join(self.dump_path, checkpoint_name)
 
         if not Path(checkpoint_path).exists():
@@ -553,7 +557,15 @@ class GPT2Trainer:
         self.total_clm_loss_epoch = state.get('total_clm_loss_epoch', self.total_clm_loss_epoch)
         self.total_loss_epoch = state.get('total_loss_epoch', self.total_loss_epoch)
         self.n_sequences_epoch = state.get('n_sequences_epoch', self.n_sequences_epoch)
+
         logger.info(f'---Resuming from epoch: {self.epoch} and iteration: {self.n_iter}')
+
+        if Path(best_checkpoint_path).exists():
+            logger.info(f'best checkpoint point at {best_checkpoint_path}')
+            state = torch.load(best_checkpoint_path, map_location=f"cpu")
+            best_loss = state['total_clm_loss_epoch']/state['iteration']
+            self.best_loss = best_loss
+            logger.info(f'Setting best loss: {self.best_loss}')
 
     def save_checkpoint(self, checkpoint_name: str = "checkpoint.pth"):
         """
@@ -563,6 +575,8 @@ class GPT2Trainer:
         logger.info(f'---saving checkpoint at epoch:{self.epoch} and iteration: {self.n_iter}')
         if not self.is_master:
             return
+
+        best_checkpoint_name = f"{checkpoint_name}.best"
         mdl_to_save = self.student.module if hasattr(self.student, "module") else self.student
         mdl_to_save.config.save_pretrained(self.dump_path)
         state = {
@@ -577,3 +591,9 @@ class GPT2Trainer:
             'optimizer_state_dict': self.optimizer.state_dict()
         }
         torch.save(state, os.path.join(self.dump_path, checkpoint_name))
+
+        current_loss = self.total_clm_loss_epoch / self.n_iter
+        if self.best_loss >= current_loss:
+            self.best_loss = current_loss
+            logger.info(f'---saving best checkpoint with avg_loss: {self.best_loss}')
+            torch.save(state, os.path.join(self.dump_path, best_checkpoint_name))
